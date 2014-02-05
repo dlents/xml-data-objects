@@ -1,0 +1,15 @@
+{
+    "name": "dlents/XmlDataObjects",
+    "description": "Parses and XSD file and provides data objects and methods from Xsd schema to easily populate and create a valid XML result",
+    "minimum-stability": "stable",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "David Lents",
+            "email": "david@lents.net"
+        }
+    ],
+    "require": {
+        "php": ">=5.4"
+    }
+}
