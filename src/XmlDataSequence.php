@@ -103,7 +103,7 @@ class xmlDataSequence {
         // $sequence = [];
         // error_log(__METHOD__ . ' with node type: ' . get_class($this->node) . ' :' . $this->node->localName);
         if ($this->node->hasChildNodes()) {
-            $sequenceIterator = new DOMElementRecursiveIterator($this->node);
+            $sequenceIterator = new XmlElementIterator($this->node);
 
             // The license Xsds specify this field with minOccurs="0", but requests are rejected unless they contain it
             //  + so I'm adding it here, there may be others, and there's probably a better way to handle it.

@@ -13,7 +13,7 @@
  */
 
 
-class DOMElementRecursiveIterator extends ArrayIterator implements RecursiveIterator {
+class XmlElementIterator extends ArrayIterator implements RecursiveIterator {
     // Works on DOMNodeList or DOMElement
     public function __construct ($element) {
         $nodes = array();
@@ -48,38 +48,5 @@ class DOMElementRecursiveIterator extends ArrayIterator implements RecursiveIter
 
     public function getChildren() {
         return new self($this->current()->childNodes);
-    }
-}
-
-// TODO: should go in another file
-
-trait Debugger {
-    protected $DEBUG = false;
-
-    public function debugOn() {
-        $this->DEBUG = true;
-    }
-
-    public function debugOff() {
-        $this->DEBUG = false;
-    }
-
-    public function debugging() {
-        return $this->DEBUG;
-    }
-
-    /**
-     * Write to error log if debugging is enabled
-     * @param string $log_msg
-     * @param int    $log_level
-     *
-     * @return bool
-     */
-    public function debugLog($log_msg = 'None', $log_level = LOG_DEBUG) {
-        if ($this->DEBUG) {
-            error_log($log_msg, $log_level);
-            return true;
-        }
-        return false;
     }
 }
