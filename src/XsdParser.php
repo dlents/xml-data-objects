@@ -160,7 +160,7 @@ class XsdParser {
     }
 
     protected function _parseNode($nodeParentName = '', $element = []) {
-        // print("Processing node '{$element['name']}', type '{$element['type']}'\n");
+        $this->debugLog("Processing node '{$element['name']}', type '{$element['type']}' (parent: '$nodeParentName'}");
         $nodeTree = $this->nodeTree;
         // $this->debugLog(__METHOD__ . " ($nodeParentName): " . print_r($element, true));
         $nodeName = $element['name'];
