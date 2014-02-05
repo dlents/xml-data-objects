@@ -183,9 +183,11 @@ class XsdParser {
             // $this->debugLog("Getting value for '$nodeName");
             $value = $dataSequence->$nodeName;
             $this->debugLog("Found value for '{$nodeName}': $value"); // DBG
-            $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName, $value);
-            $nodeTree->addNode($nodeName, $node);
-            $node->parentObj->xmlElement->appendChild($node->xmlElement);
+            if (!empty($value)) {
+                $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName, $value);
+                $nodeTree->addNode($nodeName, $node);
+                $node->parentObj->xmlElement->appendChild($node->xmlElement);
+            }
         }
         else {
             $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName);
