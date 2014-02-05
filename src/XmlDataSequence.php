@@ -6,19 +6,6 @@
  * Created with PhpStorm
  */
 
-// $xsd = 'http://www.w3.org/2001/XMLSchema-datatypes.xsd';
-// $xsd = 'http://www.w3.org/2001/XMLSchema.xsd';
-$dtXsd = __DIR__ . '/xsd/XMLSchema-datatypes.xsd';
-
-if (!file_exists($dtXsd)) {
-    trigger_error("XSD file '$dtXsd' not found.");
-}
-$dtDOM = new DOMDocument();
-$dtDOM->preserveWhiteSpace = false;
-$dtDOM->formatOutput = false;
-$dtDOM->load($dtXsd);
-
-global $dtDOM;
 
 class xmlDataSequence {
 
@@ -26,6 +13,9 @@ class xmlDataSequence {
     protected $nodeName;// ??
     protected $_elements;
     protected $_elementData;
+    protected $dtXsd;
+    protected $dtDOM;
+    protected $dtXpath;
 
 
     /**
@@ -36,6 +26,13 @@ class xmlDataSequence {
             trigger_error(__METHOD__);
         }
         $this->node = $elementNode;
+        // @link http://www.w3.org/2001/XMLSchema-datatypes.xsd
+        $this->dtXsd = __DIR__ . '/xsd/XMLSchema-datatypes.xsd';
+        $this->dtDOM = new DOMDocument();
+        $this->dtDOM->preserveWhiteSpace = false;
+        $this->dtDOM->formatOutput = false;
+        $this->dtDOM->load($this->dtXsd);
+        $this->dtXpath = new DOMXPath($this->dtDOM);
         $this->_elementData = array();
         $this->_elements = array();
         $this->_parseSequence();
@@ -169,13 +166,10 @@ class xmlDataSequence {
     }
 
     protected function _isSimpleType($type) {
-        global $dtDOM;
-        $xPath = new DOMXPath($dtDOM);
         // $xPath->registerNamespace('', 'http://www.w3.org/2001/XMLSchema-datatypes');
         // $xPath->registerNamespace('', 'http://www.w3.org/2001/XMLSchema');
-
-        $xQuery = "//child::*[local-name()= 'schema']/*[local-name() = 'simpleType' and @name = '$type']";
-        $found = $xPath->query($xQuery);
+        $xQuery = "//child::*[local-name() = 'schema']/*[local-name() = 'simpleType' and @name = '$type']";
+        $found = $this->dtXpath->query($xQuery);
         if ($found->length === 0) {
             return false;
         }
