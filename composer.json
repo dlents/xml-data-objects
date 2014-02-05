@@ -9,6 +9,9 @@
             "email": "david@lents.net"
         }
     ],
+    "autoload": {
+        "classmap": ["src/"]
+    },
     "repositories": [
         {
             "type": "vcs",
