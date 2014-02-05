@@ -7,7 +7,7 @@
  */
 
 
-class xmlDataSequence {
+class XmlDataSequence {
 
     protected $node;
     protected $nodeName;// ??

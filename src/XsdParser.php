@@ -105,7 +105,7 @@ class XsdParser {
         }
         $elementNode = $this->_getNode($elementName);
         // $this->debugLog(" -- got node :\n" . var_export($elementNode, true));
-        $dataObject = new XMLDataSequence($elementNode);
+        $dataObject = new XmlDataSequence($elementNode);
         $this->dataElements[$elementName] = $dataObject;
         // $this->debugLog("$elementName Data Elements: " . print_r($this->dataElements[$elementName], true)); // DBG
         $this->debugOff();
