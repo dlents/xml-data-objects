@@ -190,16 +190,19 @@ class XsdParser {
             }
         }
         else {
-            $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName);
-            $nodeTree->addNode($nodeName, $node);
             // recurse until node is a leaf
             // $this->debugLog(__METHOD__ . " - '$elementName' dataElements: " . print_r($this->dataElements[$elementName], true)); // DBG
             $typeSequence = $this->getDataObject($element['type']);
             // $this->debugLog($element['type'] . ': ' . print_r($typeSequence->getElements(), true));
-            foreach ($typeSequence->getElements() as $childElement) {
-                $this->_parseNode($nodeName, $childElement);
-                if ($nodeTree->hasNode($childElement['name'])) {
-                    $node->xmlElement->appendChild($nodeTree->$childElement['name']->xmlElement);
+            $typeElements = $typeSequence->getElements();
+            if (!empty($typeElements)) {
+                $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName);
+                $nodeTree->addNode($nodeName, $node);
+                foreach ($typeElements as $childElement) {
+                    $this->_parseNode($nodeName, $childElement);
+                    if ($nodeTree->hasNode($childElement['name'])) {
+                        $node->xmlElement->appendChild($nodeTree->$childElement['name']->xmlElement);
+                    }
                 }
             }
         }
