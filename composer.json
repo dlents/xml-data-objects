@@ -10,7 +10,10 @@
         }
     ],
     "autoload": {
-        "psr-0": { "": "src/"}
+        "psr-0": {
+            "": "src/",
+            "Debugger": "src/"
+        }
     },
     "repositories": [
         {
