@@ -188,8 +188,8 @@ class XsdParser {
             $node->parentObj->xmlElement->appendChild($node->xmlElement);
         }
         else {
-            $node->xmlElement = $nodeTree->xmlDoc->createElement($node->name);
-            $nodeTree->addNode($node->name, $node);
+            $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName);
+            $nodeTree->addNode($nodeName, $node);
             // recurse until node is a leaf
             // $this->debugLog(__METHOD__ . " - '$elementName' dataElements: " . print_r($this->dataElements[$elementName], true)); // DBG
             $typeSequence = $this->getDataObject($element['type']);
