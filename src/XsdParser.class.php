@@ -11,11 +11,6 @@
  *
  */
 
-// TODO: remove after composer configured
-require_once 'XmlHelpers.class.php';
-require_once 'XmlNodes.class.php';
-
-
 // TODO: better class names:
 // XsdDataObject / XsdSequence ?
 
