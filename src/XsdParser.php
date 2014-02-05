@@ -80,6 +80,9 @@ class XsdParser {
      * @return xmlDataSequence
      */
     public function getDataObject($elementName = '') {
+        if (empty($elementName)) {
+            return null;
+        }
         $this->debugOn();
         $dataObject = null;
         $this->debugLog(__METHOD__ . "(): Searching for '$elementName'");
@@ -160,6 +163,9 @@ class XsdParser {
     }
 
     protected function _parseNode($nodeParentName = '', $element = []) {
+        if (empty($element) || !array_key_exists('name', $element)) {
+            return;
+        }
         $this->debugLog("Processing node '{$element['name']}', type '{$element['type']}' (parent: '$nodeParentName'}");
         $nodeTree = $this->nodeTree;
         // $this->debugLog(__METHOD__ . " ($nodeParentName): " . print_r($element, true));
