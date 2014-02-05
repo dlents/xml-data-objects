@@ -10,10 +10,8 @@
         }
     ],
     "autoload": {
-        "psr-0": {
-            "": "src/",
-            "Debugger": "src/"
-        }
+        "psr-0": { "": "src/" },
+        "classmap": ["src/XmlHelpers.php"]
     },
     "repositories": [
         {
