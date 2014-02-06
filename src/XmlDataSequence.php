@@ -61,7 +61,7 @@ class XmlDataSequence {
     }
 
     public function hasElement($elementName) {
-        return (is_array($this->_elements[$elementName]));
+        return (array_key_exists($elementName, $this->_elements) && is_array($this->_elements[$elementName]));
     }
 
     public function isDataElement($elementName) {
