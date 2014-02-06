@@ -215,7 +215,7 @@ class XsdParser {
         return;
     }
 
-    public function saveDocument() {
+    public function getDocument() {
         // Initialize the nodeTree
         $doc = new DOMDocument('1.1', 'UTF-8');
 
