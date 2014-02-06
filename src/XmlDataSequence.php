@@ -61,7 +61,6 @@ class XmlDataSequence {
     }
 
     public function hasElement($elementName) {
-        print_r(__METHOD__ . '  ' . $this->_elements[$elementName], true);
         return (is_array($this->_elements[$elementName]));
     }
 
