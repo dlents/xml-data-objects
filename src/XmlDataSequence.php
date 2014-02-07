@@ -41,7 +41,6 @@ class XmlDataSequence {
     }
 
     public function __set($elementName, $value) {
-        error_log(__METHOD__ . " - Set value of '$elementName' -> '$value'");
         //if(array_key_exists($elementName, $this->data)) {
             $this->_elementData[$elementName] = $value;
         //}
