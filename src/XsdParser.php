@@ -146,7 +146,7 @@ class XsdParser {
         //       </xsd:sequence>
         //    </xsd:sequence>
         //</xsd:complexType>
-        $xpSequenceQuery = "/descendant::*[@name='$elementName'](//*[local-name()='sequence'])[last()]";
+        $xpSequenceQuery = "(/descendant::*[@name='$elementName']//*[local-name()='sequence'])[last()]";
 
         $this->debugLog("Trying xpath query: '$xpSequenceQuery'");
         $nodeList = $this->xPath->query($xpSequenceQuery);
