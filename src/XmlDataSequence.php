@@ -9,6 +9,7 @@
 
 class XmlDataSequence {
 
+    use Debugger;
     protected $node;
     protected $nodeName;// ??
     protected $_elements;
@@ -36,8 +37,10 @@ class XmlDataSequence {
         $this->_elementData = array();
         $this->_elements = array();
         $this->_parseSequence();
-        // error_log('Elements: ' . print_r($this->elements, true)); // DBG
-        // error_log('   ' . __METHOD__ . " node: '" . $elementNode->getAttribute('type') . "'");
+
+        $this->debugOn();
+        // $this->debugLog('Elements: ' . print_r($this->elements, true)); // DBG
+        // $this->debugLog('   ' . __METHOD__ . " node: '" . $elementNode->getAttribute('type') . "'");
     }
 
     public function __set($elementName, $value) {
@@ -45,13 +48,13 @@ class XmlDataSequence {
             $this->_elementData[$elementName] = $value;
         //}
         // $db_bt = debug_backtrace(false, 5);
-        //error_log('   == Backtrace: ' . print_r($db_bt, true));
+        //$this->debugLog('   == Backtrace: ' . print_r($db_bt, true));
     }
 
     public function __get($elementName) {
-        // error_log(__METHOD__ . "  - Get value of '$elementName' (" . print_r($this->_elementData, true) . ')');
+        // $this->debugLog(__METHOD__ . "  - Get value of '$elementName' (" . print_r($this->_elementData, true) . ')');
         if(array_key_exists($elementName, $this->_elementData)) {
-            error_log("'$elementName' =" . $this->_elementData[$elementName] . ')');
+            $this->debugLog("'$elementName' = {$this->_elementData[$elementName]}" );
             return $this->_elementData[$elementName];
         }
         else {
@@ -68,7 +71,7 @@ class XmlDataSequence {
     }
 
     public function getType($elementName) {
-        // error_log(__METHOD__ . "  - Get type of '$elementName' " . '($this->_elements[' . "'$elementName']['type'])");
+        // $this->debugLog(__METHOD__ . "  - Get type of '$elementName' " . '($this->_elements[' . "'$elementName']['type'])");
         if (array_key_exists($elementName, $this->_elements)) {
             return $this->_elements[$elementName]['type'];
         }
@@ -76,7 +79,7 @@ class XmlDataSequence {
     }
 
     public function getElements() {
-        // error_log(__METHOD__ . ' returning: ' . print_r($this->elements, true)); // DBG
+        // $this->debugLog(__METHOD__ . ' returning: ' . print_r($this->elements, true)); // DBG
         return $this->_elements;
     }
 
@@ -96,7 +99,7 @@ class XmlDataSequence {
 
         // $ups = new UpsHelper();
         // $sequence = [];
-        // error_log(__METHOD__ . ' with node type: ' . get_class($this->node) . ' :' . $this->node->localName);
+        // $this->debugLog(__METHOD__ . ' with node type: ' . get_class($this->node) . ' :' . $this->node->localName);
         if ($this->node->hasChildNodes()) {
             $sequenceIterator = new XmlElementIterator($this->node);
 
@@ -130,7 +133,7 @@ class XmlDataSequence {
                 if ($localType = strrchr($type, ':')) {
                     $type = substr($localType, 1);
                 }
-                // error_log("Type: $type\n");
+                // $this->debugLog("Type: $type\n");
 
                 if ( $this->_isSimpleType($type) ) {
                     $type = 'simpleType';
@@ -150,7 +153,7 @@ class XmlDataSequence {
             if ($localType = strrchr($type, ':')) {
                 $type = substr($localType, 1);
             }
-            // error_log("Type: $type\n");
+            // $this->debugLog("Type: $type\n");
 
             if ( $this->_isSimpleType($type) ) {
                 $type = 'simpleType';
