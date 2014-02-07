@@ -135,7 +135,19 @@ class XsdParser {
         //  //*[@name='$elementType']
         // $this->debugLog("Searching for '$elementName'");
         $this->xPath = new DOMXPath($this->xmlDOM);
-        $xpSequenceQuery = "/descendant::*[@name='$elementName']//*[local-name()='sequence']";
+        // $xpSequenceQuery = "/descendant::*[@name='$elementName']//*[local-name()='sequence']";
+        // try to account for <xsd:sequence> within <xsd:sequence> items in UPS XSDs, e.g:
+        //<xsd:complexType name="RequestType">
+        //   <xsd:sequence>
+        //       <xsd:sequence>
+        //          <xsd:element name="TransactionReference" type="TransactionReferenceType" minOccurs="0"/>
+        //          <xsd:element name="RequestAction" type="xsd:string"/>
+        //          <xsd:element name="RequestOption" type="xsd:string" minOccurs="0"/>
+        //       </xsd:sequence>
+        //    </xsd:sequence>
+        //</xsd:complexType>
+        $xpSequenceQuery = "/descendant::*[@name='$elementName(']//*[local-name()='sequence'])[last()]";
+
         $this->debugLog("Trying xpath query: '$xpSequenceQuery'");
         $nodeList = $this->xPath->query($xpSequenceQuery);
         $this->debugLog('First search found ' . $nodeList->length . ' nodes');
