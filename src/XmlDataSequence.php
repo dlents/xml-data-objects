@@ -54,7 +54,7 @@ class XmlDataSequence {
     public function __get($elementName) {
         // $this->debugLog(__METHOD__ . "  - Get value of '$elementName' (" . print_r($this->_elementData, true) . ')');
         if(array_key_exists($elementName, $this->_elementData)) {
-            $this->debugLog("'$elementName' = {$this->_elementData[$elementName]}" );
+            $this->debugLog("'$elementName' = '{$this->_elementData[$elementName]}'" );
             return $this->_elementData[$elementName];
         }
         else {
