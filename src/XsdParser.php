@@ -23,6 +23,7 @@ class XsdParser {
     protected $rootName;
     protected $nodeTree;
     public $dataElements; // keep fetched elements cached
+    protected $_choices; // keep track of choices so only one is included
 
     public function __construct($xsd = '', $rootElement = '') {
         // TODO: Should allow URL argument
@@ -38,6 +39,7 @@ class XsdParser {
         $this->xPath = new DOMXPath($this->xmlDOM);
         $this->nodeTree = new XmlNodeTree();
         $this->dataElements = array();
+        $this->_choices = array();
         if (!empty($rootElement)) {
             $this->setRootElement($rootElement);
             $this->getRootDataObject();
@@ -117,6 +119,12 @@ class XsdParser {
         return $dataObject;
     }
 
+    protected function _hasChoice($elementName = '') {
+        if (empty($elementName)) {
+            return false;
+        }
+
+    }
     /**
      * @param string $elementName
      * @return DOMNode | DOMElement
@@ -146,21 +154,46 @@ class XsdParser {
         //       </xsd:sequence>
         //    </xsd:sequence>
         //</xsd:complexType>
-        $xpSequenceQuery = "(/descendant::*[@name='$elementName']//*[local-name()='sequence'])[last()]";
 
-        $this->debugLog("Trying xpath query: '$xpSequenceQuery'");
-        $nodeList = $this->xPath->query($xpSequenceQuery);
-        $this->debugLog('First search found ' . $nodeList->length . ' nodes');
+
+        // First, check for a choice TODO: (would only be in the root node?)
+        // get all children of contain choice
+        $xpChoiceQuery = "//*[@name='$elementName']/parent::*[local-name()='choice']/*";
+        //  //*[@name='Address']/parent::*[local-name()='choice']/*
+        // also works: //:*[local-name()='choice']/*[@name='Address']/../*
+        $this->debugLog("Trying choice query: '$xpChoiceQuery'");
+        $nodeList = $this->xPath->query($xpChoiceQuery);
+        if ($nodeList->length > 1) {
+            $choices = [];
+            $node = null;
+            foreach ($nodeList as $elem) {
+                $elemName = $elem->getAttribute('name');
+                if ($elemName = $elementName) {
+                    $node = $elem;
+                }
+                $choices[] = $elemName;
+            }
+            sort($choices);
+            if (!in_array($choices, $this->_choices)) {
+                $this->_choices[] = $choices;
+            }
+        }
+        // Next, check for a sequence
+        if ($nodeList->length === 0) {
+            $xpSequenceQuery = "(/descendant::*[@name='$elementName']//*[local-name()='sequence'])[last()]";
+            $this->debugLog("Trying sequence query: '$xpSequenceQuery'");
+            $nodeList = $this->xPath->query($xpSequenceQuery);
+            $this->debugLog('Found sequence ' . $nodeList->length . ' nodes');
+        }
+
+        // Next, check for a simple element
         if ($nodeList->length === 0) {
             $xpElementQuery = "/descendant::*[@name='$elementName' and local-name()='element']";
-            $this->debugLog("Trying xpath query: '$xpElementQuery'");
+            $this->debugLog("Trying element query: '$xpElementQuery'");
             $nodeList = $this->xPath->query($xpElementQuery);
         }
-        if ($nodeList === false) {
-            // TODO: this indicates a malformed expression of invalid contextnode
-            $node = null;
-        }
-        elseif ($nodeList->length === 0) {
+
+        if ($nodeList->length === 0) {
             // TODO: do something here - can't find requested element
             $this->debugLog("Did not find element '$elementName'");
             $node = null;
