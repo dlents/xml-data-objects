@@ -17,6 +17,7 @@ class XmlDataSequence {
     protected $dtXsd;
     protected $dtDOM;
     protected $dtXpath;
+    protected $choice
 
 
     /**
@@ -110,10 +111,10 @@ class XmlDataSequence {
 
             foreach ($sequenceIterator->getRecursiveIterator() as $element) {
                 // $element may be DOMNodeList or DOMElement, our iterator handle either case
+                $choice = false;
                 if ($element->localName === 'choice') {
                     // Choice of elements, meaning you can pick which one to use
-                    // for now we're manually choosing, via $ups->rejectedChoiceElements below
-                    // continue;
+                    $choice = true;
                 }
                 $name = $element->getAttribute('name');
 
@@ -140,8 +141,9 @@ class XmlDataSequence {
                     $this->$name = '';
                 }
                 $this->_elements[$name] = [
-                    'name' => $name,
-                    'type' => $type
+                    'name'   => $name,
+                    'type'   => $type,
+                    'choice' => $choice
                 ];
             }
         }
