@@ -44,9 +44,9 @@ class XmlDataSequence {
     }
 
     public function __set($elementName, $value) {
-        //if(array_key_exists($elementName, $this->data)) {
+        if(array_key_exists($elementName, $this->_elementData)) {
             $this->_elementData[$elementName] = $value;
-        //}
+        }
         // $db_bt = debug_backtrace(false, 5);
         //$this->debugLog('   == Backtrace: ' . print_r($db_bt, true));
     }
@@ -137,7 +137,7 @@ class XmlDataSequence {
 
                 if ( $this->_isSimpleType($type) ) {
                     $type = 'simpleType';
-                    $this->$name = null;
+                    $this->$name = '';
                 }
                 $this->_elements[$name] = [
                     'name' => $name,

@@ -31,15 +31,15 @@ class XsdParser {
             trigger_error(__METHOD__ . " argument '$xsd' not found or can't be read");
         }
         // Set up DOM document and xpath objects
-        $this->xmlDOM = new DOMDocument();
+        $this->xmlDOM                     = new DOMDocument();
         $this->xmlDOM->preserveWhiteSpace = false;
-        $this->xmlDOM->formatOutput = true;
+        $this->xmlDOM->formatOutput       = true;
         $this->xmlDOM->load($xsd);
-        $this->xsd = $xsd;
-        $this->xPath = new DOMXPath($this->xmlDOM);
-        $this->nodeTree = new XmlNodeTree();
+        $this->xsd          = $xsd;
+        $this->xPath        = new DOMXPath($this->xmlDOM);
+        $this->nodeTree     = new XmlNodeTree();
         $this->dataElements = array();
-        $this->_choices = array();
+        $this->_choices     = array();
         if (!empty($rootElement)) {
             $this->setRootElement($rootElement);
             $this->getRootDataObject();
@@ -49,6 +49,7 @@ class XsdParser {
     public function __destruct() {
         // $this->debugLog("dataElements:\n" . var_export($this->dataElements, true));
     }
+
     public function getNodeTree() {
         return $this->nodeTree;
     }
@@ -64,6 +65,7 @@ class XsdParser {
             $this->rootName = 'AccessLicenseAgreementRequest';
         }
     }
+
     public function getRootName() {
         return $this->rootName;
     }
@@ -110,7 +112,7 @@ class XsdParser {
         }
         $elementNode = $this->_getNode($elementName);
         // $this->debugLog(" -- got node :\n" . var_export($elementNode, true));
-        $dataObject = new XmlDataSequence($elementNode);
+        $dataObject                       = new XmlDataSequence($elementNode);
         $this->dataElements[$elementName] = $dataObject;
         // $this->debugLog("$elementName Data Elements: " . print_r($this->dataElements[$elementName], true)); // DBG
         $this->debugOff();
@@ -125,8 +127,10 @@ class XsdParser {
         }
 
     }
+
     /**
      * @param string $elementName
+     *
      * @return DOMNode | DOMElement
      */
     public function _getNode($elementName = '') {
@@ -165,7 +169,7 @@ class XsdParser {
         $nodeList = $this->xPath->query($xpChoiceQuery);
         if ($nodeList->length > 1) {
             $choices = [];
-            $node = null;
+            $node    = null;
             foreach ($nodeList as $elem) {
                 $elemName = $elem->getAttribute('name');
                 if ($elemName = $elementName) {
@@ -265,7 +269,7 @@ class XsdParser {
         $doc = new DOMDocument('1.1', 'UTF-8');
 
         // $nodeTree->treeName = $rootName; //TODO: not needed
-        $this->nodeTree->xmlDoc   = $doc;
+        $this->nodeTree->xmlDoc = $doc;
         // $nodeTree->xsdFile  = $this->xsd; // not neeeded?
 
         // add the top node based on the type of UPS request
@@ -297,7 +301,7 @@ class XsdParser {
     }
 
     protected function _validateDocument() {
-        $doc = $this->nodeTree->xmlDoc;
+        $doc          = $this->nodeTree->xmlDoc;
         $ret          = array();
         $ret['error'] = '';
 
