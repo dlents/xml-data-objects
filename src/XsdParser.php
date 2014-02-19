@@ -121,12 +121,25 @@ class XsdParser {
         return $dataObject;
     }
 
-    protected function _hasChoice($elementName = '') {
-        if (empty($elementName)) {
+
+    /**
+     * @method _isChoice() - is this element one of a schema choice group?
+     * @param string $elementName
+     *
+     * @return bool
+     */
+    protected function _isChoice($elementName = '') {
+        if (empty($elementName) || empty($this->_choices)) {
             return false;
         }
-
+        foreach ($this->_choices as $choice) {
+            if (in_array($elementName, $choice)) {
+                return true;
+            }
+        }
+        return false;
     }
+
     /**
      * @param string $elementName
      * @return DOMNode | DOMElement
