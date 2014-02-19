@@ -42,7 +42,7 @@ class XsdParser {
         $this->_choices = array();
         if (!empty($rootElement)) {
             $this->setRootElement($rootElement);
-            $this->getRootDataObject();
+            // $this->getRootDataObject();
         }
     }
 
@@ -325,13 +325,17 @@ class XsdParser {
         // TODO: This should have a method
         $rootNode->xmlElement->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
         $this->nodeTree->addNode($this->rootName, $rootNode); // TODO: nodes don't need to be double named
+
         $this->getRootDataObject(); // TODO: Fixme
         $rootSequence = $this->dataElements[$this->rootName]->getElements();
         // $this->debugLog(__METHOD__ . " - '{$this->rootName}' dataElements: " . print_r($this->dataElements[$this->rootName], true)); // DBG
         // $this->debugLog("Root sequence ($this->rootName)" . ': ' . print_r($rootSequence, true));
         // get top level nodes, in the order required by the xsd
         foreach ($rootSequence as $childElement) {
-            if ($childElement['name'] === 'Address' || $childElement['name'] === 'AddressType') continue; // TODO: remove and fix!!
+            // if ($childElement['name'] === 'Address' || $childElement['name'] === 'AddressType') continue; // TODO: remove and fix!!
+            if ($this->_isChoice($childElement['name'])) {
+                $this->debugLog(__METHOD__ . "() - found choice element '{$childElement['name']}'");
+            }
             $this->_parseNode($this->rootName, $childElement);
             if ($this->nodeTree->hasNode($childElement['name'])) {
                 $rootNode->xmlElement->appendChild($this->nodeTree->$childElement['name']->xmlElement);

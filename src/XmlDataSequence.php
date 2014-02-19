@@ -17,7 +17,7 @@ class XmlDataSequence {
     protected $dtXsd;
     protected $dtDOM;
     protected $dtXpath;
-    protected $choice
+    protected $choice;
 
 
     /**
