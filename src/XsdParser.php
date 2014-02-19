@@ -31,15 +31,15 @@ class XsdParser {
             trigger_error(__METHOD__ . " argument '$xsd' not found or can't be read");
         }
         // Set up DOM document and xpath objects
-        $this->xmlDOM                     = new DOMDocument();
+        $this->xmlDOM = new DOMDocument();
         $this->xmlDOM->preserveWhiteSpace = false;
-        $this->xmlDOM->formatOutput       = true;
+        $this->xmlDOM->formatOutput = true;
         $this->xmlDOM->load($xsd);
-        $this->xsd          = $xsd;
-        $this->xPath        = new DOMXPath($this->xmlDOM);
-        $this->nodeTree     = new XmlNodeTree();
+        $this->xsd = $xsd;
+        $this->xPath = new DOMXPath($this->xmlDOM);
+        $this->nodeTree = new XmlNodeTree();
         $this->dataElements = array();
-        $this->_choices     = array();
+        $this->_choices = array();
         if (!empty($rootElement)) {
             $this->setRootElement($rootElement);
             $this->getRootDataObject();
@@ -49,7 +49,6 @@ class XsdParser {
     public function __destruct() {
         // $this->debugLog("dataElements:\n" . var_export($this->dataElements, true));
     }
-
     public function getNodeTree() {
         return $this->nodeTree;
     }
@@ -65,7 +64,6 @@ class XsdParser {
             $this->rootName = 'AccessLicenseAgreementRequest';
         }
     }
-
     public function getRootName() {
         return $this->rootName;
     }
@@ -112,12 +110,14 @@ class XsdParser {
         }
         $elementNode = $this->_getNode($elementName);
         // $this->debugLog(" -- got node :\n" . var_export($elementNode, true));
-        $dataObject                       = new XmlDataSequence($elementNode);
-        $this->dataElements[$elementName] = $dataObject;
+        if ($elementNode) {
+            $dataObject = new XmlDataSequence($elementNode);
+            $this->dataElements[$elementName] = $dataObject;
+        }
+
         // $this->debugLog("$elementName Data Elements: " . print_r($this->dataElements[$elementName], true)); // DBG
         $this->debugOff();
         // $this->debugLog(" -- dataObject now:\n" . var_export($dataObject, true));
-
         return $dataObject;
     }
 
@@ -127,10 +127,8 @@ class XsdParser {
         }
 
     }
-
     /**
      * @param string $elementName
-     *
      * @return DOMNode | DOMElement
      */
     public function _getNode($elementName = '') {
@@ -146,7 +144,7 @@ class XsdParser {
         // To find type sequence:
         //  //*[@name='$elementType']
         // $this->debugLog("Searching for '$elementName'");
-        $this->xPath = new DOMXPath($this->xmlDOM);
+
         // $xpSequenceQuery = "/descendant::*[@name='$elementName']//*[local-name()='sequence']";
         // try to account for <xsd:sequence> within <xsd:sequence> items in UPS XSDs, e.g:
         //<xsd:complexType name="RequestType">
@@ -159,55 +157,88 @@ class XsdParser {
         //    </xsd:sequence>
         //</xsd:complexType>
 
+        $node = null; // this is the node we'll return
+        $type = '';
 
-        // First, check for a choice TODO: (would only be in the root node?)
-        // get all children of contain choice
-        $xpChoiceQuery = "//*[@name='$elementName']/parent::*[local-name()='choice']/*";
-        //  //*[@name='Address']/parent::*[local-name()='choice']/*
-        // also works: //:*[local-name()='choice']/*[@name='Address']/../*
-        $this->debugLog("Trying choice query: '$xpChoiceQuery'");
-        $nodeList = $this->xPath->query($xpChoiceQuery);
-        if ($nodeList->length > 1) {
+        if ($node = $this->_findChoiceByName($elementName)) {
+            $type = 'choice';
+        }
+        elseif ($node = $this->_findSequenceByName($elementName)) {
+            $type = 'sequence';
+        }
+        elseif ($node = $this->_findElementByName($elementName)) {
+            $type = 'element';
+        }
+        else {
+            $type = 'no';
+        }
+
+        $this->debugLog("Found $type node for name '$elementName'");
+        $this->debugOff();
+        return $node;
+    }
+
+    /**
+     * @param string $name
+     * @return DOMNode|null
+     */
+    protected function _findChoiceByName($elementName) {
+        if (empty($elementName)) {
+            return null;
+        }
+        $node = null;
+        $xPathQuery = "//*[@name='$elementName']/parent::*[local-name()='choice']/*";
+        $nodeList = $this->xPath->query($xPathQuery);
+        if ($nodeList->length) {
             $choices = [];
-            $node    = null;
             foreach ($nodeList as $elem) {
                 $elemName = $elem->getAttribute('name');
-                if ($elemName = $elementName) {
+                if ($elemName == $elementName) {
                     $node = $elem;
                 }
                 $choices[] = $elemName;
             }
-            sort($choices);
+            natcasesort($choices);
             if (!in_array($choices, $this->_choices)) {
                 $this->_choices[] = $choices;
             }
         }
-        // Next, check for a sequence
-        if ($nodeList->length === 0) {
-            $xpSequenceQuery = "(/descendant::*[@name='$elementName']//*[local-name()='sequence'])[last()]";
-            $this->debugLog("Trying sequence query: '$xpSequenceQuery'");
-            $nodeList = $this->xPath->query($xpSequenceQuery);
-            $this->debugLog('Found sequence ' . $nodeList->length . ' nodes');
-        }
 
-        // Next, check for a simple element
-        if ($nodeList->length === 0) {
-            $xpElementQuery = "/descendant::*[@name='$elementName' and local-name()='element']";
-            $this->debugLog("Trying element query: '$xpElementQuery'");
-            $nodeList = $this->xPath->query($xpElementQuery);
-        }
+        return $node;
+    }
 
-        if ($nodeList->length === 0) {
-            // TODO: do something here - can't find requested element
-            $this->debugLog("Did not find element '$elementName'");
-            $node = null;
+    /**
+     * @param string $name
+     * @return DOMNode|null
+     */
+    protected function _findSequenceByName($elementName) {
+        if (empty($elementName)) {
+            return null;
         }
-        else {
+        $node = null;
+        $xPathQuery = "(/descendant::*[@name='$elementName']//*[local-name()='sequence'])[last()]";
+        $nodeList = $this->xPath->query($xPathQuery);
+
+        if ($nodeList->length) {
             $node = $nodeList->item(0);
         }
+        return $node;
+    }
 
-        //$this->debugLog(var_export($node, true));
-        $this->debugOff();
+    /**
+     * @param string $name
+     * @return DOMNode|null
+     */
+    protected function _findElementByName($elementName) {
+        if (empty($elementName)) {
+            return null;
+        }
+        $node = null;
+        $xPathQuery = "/descendant::*[@name='$elementName' and local-name()='element']";
+        $nodeList = $this->xPath->query($xPathQuery);
+        if ($nodeList->length) {
+            $node = $nodeList->item(0);
+        }
         return $node;
     }
 
@@ -215,7 +246,7 @@ class XsdParser {
         if (empty($element) || !array_key_exists('name', $element)) {
             return;
         }
-        $this->debugLog("Processing node '{$element['name']}', type '{$element['type']}' (parent: '$nodeParentName'}");
+        $this->debugLog(__METHOD__ . " :: Processing node '(parent: '$nodeParentName'}, element: " . var_export($element, true));
         $nodeTree = $this->nodeTree;
         // $this->debugLog(__METHOD__ . " ($nodeParentName): " . print_r($element, true));
         $nodeName = $element['name'];
@@ -237,13 +268,14 @@ class XsdParser {
             $dataSequence = $this->getDataObject($nodeName);
             // $this->debugLog("Getting value for '$nodeName");
             $value = $dataSequence->$nodeName;
-            $this->debugLog("Found value for '{$nodeName}': $value"); // DBG
+            $this->debugLog(__METHOD__ . " :: Found value for '{$nodeName}': $value"); // DBG
             if (!empty($value)) {
                 $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName, $value);
                 $nodeTree->addNode($nodeName, $node);
                 $node->parentObj->xmlElement->appendChild($node->xmlElement);
             }
         }
+        // TODO: check for sub-objects?
         else {
             // recurse until node is a leaf
             // $this->debugLog(__METHOD__ . " - '$elementName' dataElements: " . print_r($this->dataElements[$elementName], true)); // DBG
@@ -269,7 +301,7 @@ class XsdParser {
         $doc = new DOMDocument('1.1', 'UTF-8');
 
         // $nodeTree->treeName = $rootName; //TODO: not needed
-        $this->nodeTree->xmlDoc = $doc;
+        $this->nodeTree->xmlDoc   = $doc;
         // $nodeTree->xsdFile  = $this->xsd; // not neeeded?
 
         // add the top node based on the type of UPS request
@@ -286,6 +318,7 @@ class XsdParser {
         // $this->debugLog("Root sequence ($this->rootName)" . ': ' . print_r($rootSequence, true));
         // get top level nodes, in the order required by the xsd
         foreach ($rootSequence as $childElement) {
+            if ($childElement['name'] === 'Address' || $childElement['name'] === 'AddressType') continue; // TODO: remove and fix!!
             $this->_parseNode($this->rootName, $childElement);
             if ($this->nodeTree->hasNode($childElement['name'])) {
                 $rootNode->xmlElement->appendChild($this->nodeTree->$childElement['name']->xmlElement);
@@ -293,15 +326,15 @@ class XsdParser {
         }
         // The XML is all ready to go
         $doc->appendChild($rootNode->xmlElement);
-        $valid = $this->_validateDocument($doc);
-        if ($valid['result'] !== 'OK') {
-            return "XML Validation errors:\n" . $valid['error'];
-        }
+//        $valid = $this->_validateDocument($doc);
+//        if ($valid['result'] !== 'OK') {
+//            return "XML Validation errors:\n" . $valid['error'];
+//        }
         return $doc;
     }
 
     protected function _validateDocument() {
-        $doc          = $this->nodeTree->xmlDoc;
+        $doc = $this->nodeTree->xmlDoc;
         $ret          = array();
         $ret['error'] = '';
 
@@ -311,7 +344,7 @@ class XsdParser {
         $isValid = $doc->schemaValidate($this->xsd);
 
         if (!$isValid) {
-            libxml_log_errors();
+            $this->_processValidationErrors();
             $ret['result'] = 'FAIL';
             $ret['error']  = 'Schema validation failed, please contact Captina Support for assistance.';
 
@@ -321,6 +354,41 @@ class XsdParser {
         }
         libxml_clear_errors();
         return $ret;
+    }
+
+    protected function _processValidationErrors() {
+        $errors = libxml_get_errors();
+        $msgs   = array();
+        foreach ($errors as $error) {
+            $msgs[] = $this->_formatLibXmlErrors($error);
+        }
+        libxml_clear_errors();
+        // PRODUCTION: LogError(implode("/n", $msgs));
+        foreach ($msgs as $msg) { // DEV mode
+            $this->debugLog($msg);
+        }
+        exit;
+    }
+
+    protected function _formatLibXmlErrors($error) {
+        $return = '';
+        switch ($error->level) {
+            case LIBXML_ERR_WARNING:
+                $return .= "Warning {$error->code}: ";
+                break;
+            case LIBXML_ERR_ERROR:
+                $return .= "Error {$error->code}: ";
+                break;
+            case LIBXML_ERR_FATAL:
+                $return .= "Fatal Error {$error->code}: ";
+                break;
+        }
+        $return .= trim($error->message);
+        if ($error->file) {
+            $return .= " in file '{$error->file}'";
+        }
+        $return .= " on line {$error->line}\n";
+        return $return;
     }
 }
 
