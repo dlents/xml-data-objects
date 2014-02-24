@@ -47,7 +47,7 @@ class XsdParser {
     }
 
     public function __destruct() {
-        // $this->debugLog("dataElements:\n" . var_export($this->dataElements, true));
+        $this->debugLog("dataElements:\n" . var_export(array_keys($this->dataElements), true));
     }
     public function getNodeTree() {
         return $this->nodeTree;
@@ -73,7 +73,7 @@ class XsdParser {
      * @return xmlDataSequence
      */
     public function getRootDataObject() {
-        return $this->getDataObject($this->rootName);
+        return $this->getDataObject( $this->rootName );
     }
 
     /**
@@ -81,46 +81,50 @@ class XsdParser {
      *
      * @return xmlDataSequence
      */
-    public function getDataObject($elementName = '') {
-        if (empty($elementName)) {
+    public function getDataObject($element) {
+        if (empty($element)) {
             return null;
         }
+
+        //TODO: redoing to get data elements vs. sequences/complexTypes correctly
+
         $this->debugOn();
         $dataObject = null;
-        $this->debugLog(__METHOD__ . "(): Searching for '$elementName'");
-        if (array_key_exists($elementName, $this->dataElements) && is_object($this->dataElements[$elementName])) {
-            $this->debugLog(" -- Found '$elementName' in existing object");
-            return $this->dataElements[$elementName];
+        //$this->debugLog(__METHOD__ . "(): Searching for '$elementName'");
+        if ($this->_hasDataObject($element)) {
+            //$this->debugLog(" -- Found '$elementName' in existing object");
+            return $this->dataElements[$element];
         }
         elseif (!empty($this->dataElements)) {
-            $this->debugLog("-- Searching existing elements for '$elementName'");
+            //$this->debugLog("-- Searching existing elements for '$elementName'");
             foreach ($this->dataElements as $seqName => $seqObject) {
-                $this->debugLog("-- Searching in '$seqName' for '$elementName'");
-                if ($seqObject->hasElement($elementName)) {
-                    $this->debugLog(" -- Found '$elementName' in existing '$seqName' object");
+                //$this->debugLog("-- Searching in '$seqName' for '$elementName'");
+                if ($seqObject->hasElement($element)) {
+                    //$this->debugLog(" -- Found '$elementName' in existing '$seqName' object");
                     return $seqObject;
                 }
                 else {
-                    $this->debugLog(" -- '$elementName' not found in '$seqName' object'");
+                    //$this->debugLog(" -- '$elementName' not found in '$seqName' object'");
                 }
             }
         }
-        else {
-            $this->debugLog(" -- dataElements is empty");
-        }
-        $elementNode = $this->_getNode($elementName);
-        // $this->debugLog(" -- got node :\n" . var_export($elementNode, true));
+        // TODO: need isSimpleType() method here
+        $elementNode = $this->_getNode($element);
+        // //$this->debugLog(" -- got node :\n" . var_export($elementNode, true));
         if ($elementNode) {
             $dataObject = new XmlDataSequence($elementNode);
-            $this->dataElements[$elementName] = $dataObject;
+            $this->dataElements[$element] = $dataObject;
         }
 
-        // $this->debugLog("$elementName Data Elements: " . print_r($this->dataElements[$elementName], true)); // DBG
+        $this->debugLog("$element Data Elements: " . print_r(array_keys($this->dataElements), true)); // DBG
         $this->debugOff();
         // $this->debugLog(" -- dataObject now:\n" . var_export($dataObject, true));
         return $dataObject;
     }
 
+    protected function _hasDataObject($elementName) {
+        return array_key_exists($elementName, $this->dataElements) && is_object($this->dataElements[$elementName]);
+    }
 
     /**
      * @method _isChoice() - is this element one of a schema choice group?
@@ -146,7 +150,7 @@ class XsdParser {
      */
     public function _getNode($elementName = '') {
         $this->debugOn();
-        $this->debugLog(__METHOD__ . " - searching for node '$elementName'");
+        //$this->debugLog(__METHOD__ . " - searching for node '$elementName'");
         if (empty($elementName)) {
             trigger_error(__METHOD__ . ' Error: element name argument required');
         }
@@ -199,10 +203,13 @@ class XsdParser {
         if (empty($elementName)) {
             return null;
         }
+        // $this->debugLog(__METHOD__ . "() - searching for choice '$elementName'");
+
         $node = null;
-        $xPathQuery = "//*[@name='$elementName']/parent::*[local-name()='choice']/*";
+        $xPathQuery = "//*[@name='$elementName' or @type='$elementName']/parent::*[local-name()='choice']/*";
         $nodeList = $this->xPath->query($xPathQuery);
         if ($nodeList->length) {
+            // $this->debugLog(__METHOD__ . "() - Found choice '$elementName'");
             $choices = [];
             foreach ($nodeList as $elem) {
                 $elemName = $elem->getAttribute('name');
@@ -259,7 +266,7 @@ class XsdParser {
         if (empty($element) || !array_key_exists('name', $element)) {
             return;
         }
-        $this->debugLog(__METHOD__ . " :: Processing node '(parent: '$nodeParentName'}, element: " . var_export($element, true));
+        //$this->debugLog(__METHOD__ . " :: Processing node '(parent: '$nodeParentName'}, element: " . var_export($element, true));
         $nodeTree = $this->nodeTree;
         // $this->debugLog(__METHOD__ . " ($nodeParentName): " . print_r($element, true));
         $nodeName = $element['name'];
@@ -278,12 +285,13 @@ class XsdParser {
 
 
         if ($element['type'] === 'simpleType') { // leaf node, no children
-            $dataSequence = $this->getDataObject($nodeName);
+            $data = $this->getDataObject($element['name']);
             // $this->debugLog("Getting value for '$nodeName");
-            $value = $dataSequence->$nodeName;
-            $this->debugLog(__METHOD__ . " :: Found value for '{$nodeName}': $value"); // DBG
+            $value = $data->$nodeName;
+            //$this->debugLog(__METHOD__ . " :: Found value for '{$nodeName}': $value"); // DBG
             if (!empty($value)) {
-                $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName, $value);
+                $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName, htmlentities($value, ENT_XML1));
+                // $node->xmlElement = $nodeTree->xmlDoc->createTextNode($nodeName, $value);
                 $nodeTree->addNode($nodeName, $node);
                 $node->parentObj->xmlElement->appendChild($node->xmlElement);
             }
@@ -294,8 +302,8 @@ class XsdParser {
             // $this->debugLog(__METHOD__ . " - '$elementName' dataElements: " . print_r($this->dataElements[$elementName], true)); // DBG
             $typeSequence = $this->getDataObject($element['type']);
             // $this->debugLog($element['type'] . ': ' . print_r($typeSequence->getElements(), true));
-            $typeElements = $typeSequence->getElements();
-            if (!empty($typeElements)) {
+            if (is_object($typeSequence)) {
+                $typeElements = $typeSequence->getElements();
                 $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName);
                 $nodeTree->addNode($nodeName, $node);
                 foreach ($typeElements as $childElement) {
@@ -331,10 +339,17 @@ class XsdParser {
         // $this->debugLog(__METHOD__ . " - '{$this->rootName}' dataElements: " . print_r($this->dataElements[$this->rootName], true)); // DBG
         // $this->debugLog("Root sequence ($this->rootName)" . ': ' . print_r($rootSequence, true));
         // get top level nodes, in the order required by the xsd
+        // $this->debugLog(__METHOD__ . "() - choices are:\n" . var_export($this->_choices, true));
         foreach ($rootSequence as $childElement) {
             // if ($childElement['name'] === 'Address' || $childElement['name'] === 'AddressType') continue; // TODO: remove and fix!!
+            // $this->debugLog(__METHOD__ . "() - checking '{$childElement['name']}':\n" . var_export($childElement, true));
             if ($this->_isChoice($childElement['name'])) {
-                $this->debugLog(__METHOD__ . "() - found choice element '{$childElement['name']}'");
+                $dataKey = ($childElement['type'] === 'simpleType' ? $childElement['name'] : $childElement['type']);
+                if (!$this->_hasDataObject($dataKey)) {
+//                    $this->debugLog(__METHOD__ . "() - Skipping choice element '{$childElement['name']}'\n"
+//                        . var_export(array_keys($this->dataElements), true));
+                    continue;
+                }
             }
             $this->_parseNode($this->rootName, $childElement);
             if ($this->nodeTree->hasNode($childElement['name'])) {
@@ -343,10 +358,11 @@ class XsdParser {
         }
         // The XML is all ready to go
         $doc->appendChild($rootNode->xmlElement);
-//        $valid = $this->_validateDocument($doc);
-//        if ($valid['result'] !== 'OK') {
-//            return "XML Validation errors:\n" . $valid['error'];
-//        }
+        $valid = $this->_validateDocument($doc);
+        if ($valid['result'] !== 'OK') {
+            trigger_error("XML Validation error:\n" . implode("\n", $valid['error']));
+            exit;
+        }
         return $doc;
     }
 
@@ -361,15 +377,13 @@ class XsdParser {
         $isValid = $doc->schemaValidate($this->xsd);
 
         if (!$isValid) {
-            $this->_processValidationErrors();
             $ret['result'] = 'FAIL';
-            $ret['error']  = 'Schema validation failed, please contact Captina Support for assistance.';
+            $ret['error']  = $this->_processValidationErrors();
 
         }
         else {
             $ret['result'] = 'OK';
         }
-        libxml_clear_errors();
         return $ret;
     }
 
@@ -380,11 +394,7 @@ class XsdParser {
             $msgs[] = $this->_formatLibXmlErrors($error);
         }
         libxml_clear_errors();
-        // PRODUCTION: LogError(implode("/n", $msgs));
-        foreach ($msgs as $msg) { // DEV mode
-            $this->debugLog($msg);
-        }
-        exit;
+        return $msgs; // TODO: maybe store these in object?
     }
 
     protected function _formatLibXmlErrors($error) {

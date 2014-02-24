@@ -11,13 +11,12 @@ class XmlDataSequence {
 
     use Debugger;
     protected $node;
-    protected $nodeName;// ??
+    protected $parentName;// ??
     protected $_elements;
     protected $_elementData;
     protected $dtXsd;
     protected $dtDOM;
     protected $dtXpath;
-    protected $choice;
 
 
     /**
@@ -28,6 +27,8 @@ class XmlDataSequence {
             trigger_error(__METHOD__);
         }
         $this->node = $elementNode;
+
+        $this->parentName = $elementNode->parentNode->getAttribute('name');
         // @link http://www.w3.org/2001/XMLSchema-datatypes.xsd
         $this->dtXsd = __DIR__ . '/xsd/XMLSchema-datatypes.xsd';
         $this->dtDOM = new DOMDocument();
@@ -44,9 +45,15 @@ class XmlDataSequence {
         // $this->debugLog('   ' . __METHOD__ . " node: '" . $elementNode->getAttribute('type') . "'");
     }
 
+    public function name() {
+        return $this->nodeName;
+    }
+
     public function __set($elementName, $value) {
-        if(array_key_exists($elementName, $this->_elementData)) {
+        // if(array_key_exists($elementName, $this->_elementData)) {
+        if (!empty($elementName) && $this->isDataElement($elementName)) {
             $this->_elementData[$elementName] = $value;
+            // $this->debugLog(__METHOD__ . "() - '$elementName' = '{$this->_elementData[$elementName]}'" );
         }
         // $db_bt = debug_backtrace(false, 5);
         //$this->debugLog('   == Backtrace: ' . print_r($db_bt, true));
@@ -55,7 +62,7 @@ class XmlDataSequence {
     public function __get($elementName) {
         // $this->debugLog(__METHOD__ . "  - Get value of '$elementName' (" . print_r($this->_elementData, true) . ')');
         if(array_key_exists($elementName, $this->_elementData)) {
-            $this->debugLog("'$elementName' = '{$this->_elementData[$elementName]}'" );
+            //$this->debugLog(__METHOD__ . "() - '$elementName' = '{$this->_elementData[$elementName]}'" );
             return $this->_elementData[$elementName];
         }
         else {
@@ -111,10 +118,10 @@ class XmlDataSequence {
 
             foreach ($sequenceIterator->getRecursiveIterator() as $element) {
                 // $element may be DOMNodeList or DOMElement, our iterator handle either case
-                $choice = false;
                 if ($element->localName === 'choice') {
                     // Choice of elements, meaning you can pick which one to use
-                    $choice = true;
+                    // for now we're manually choosing, via $ups->rejectedChoiceElements below
+                    continue;
                 }
                 $name = $element->getAttribute('name');
 
@@ -141,9 +148,8 @@ class XmlDataSequence {
                     $this->$name = '';
                 }
                 $this->_elements[$name] = [
-                    'name'   => $name,
-                    'type'   => $type,
-                    'choice' => $choice
+                    'name' => $name,
+                    'type' => $type
                 ];
             }
         }
