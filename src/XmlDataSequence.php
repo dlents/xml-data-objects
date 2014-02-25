@@ -15,6 +15,7 @@ class XmlDataSequence {
     protected $_elements;
     protected $_elementData;
     protected $schemaHelper;
+    protected $chosen;
 
 
     /**
@@ -30,6 +31,7 @@ class XmlDataSequence {
         $this->schemaHelper = new XsdSchemaHelper();
         $this->_elementData = array();
         $this->_elements = array();
+        $this->chosen = false;
         $this->_parseSequence();
 
         $this->debugOn();
@@ -45,6 +47,7 @@ class XmlDataSequence {
         // if(array_key_exists($elementName, $this->_elementData)) {
         if (!empty($elementName) && $this->isDataElement($elementName)) {
             $this->_elementData[$elementName] = $value;
+            $this->chosen = true;
             // $this->debugLog(__METHOD__ . "() - '$elementName' = '{$this->_elementData[$elementName]}'" );
         }
         // $db_bt = debug_backtrace(false, 5);
@@ -60,6 +63,10 @@ class XmlDataSequence {
         else {
             return null;
         }
+    }
+
+    public function isChosen() {
+        return $this->chosen;
     }
 
     public function hasElement($elementName) {
