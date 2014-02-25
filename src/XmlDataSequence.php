@@ -14,9 +14,7 @@ class XmlDataSequence {
     protected $parentName;// ??
     protected $_elements;
     protected $_elementData;
-    protected $dtXsd;
-    protected $dtDOM;
-    protected $dtXpath;
+    protected $schemaHelper;
 
 
     /**
@@ -29,13 +27,7 @@ class XmlDataSequence {
         $this->node = $elementNode;
 
         $this->parentName = $elementNode->parentNode->getAttribute('name');
-        // @link http://www.w3.org/2001/XMLSchema-datatypes.xsd
-        $this->dtXsd = __DIR__ . '/xsd/XMLSchema-datatypes.xsd';
-        $this->dtDOM = new DOMDocument();
-        $this->dtDOM->preserveWhiteSpace = false;
-        $this->dtDOM->formatOutput = false;
-        $this->dtDOM->load($this->dtXsd);
-        $this->dtXpath = new DOMXPath($this->dtDOM);
+        $this->schemaHelper = new XsdSchemaHelper();
         $this->_elementData = array();
         $this->_elements = array();
         $this->_parseSequence();
@@ -137,13 +129,7 @@ class XmlDataSequence {
 
                 $type = $element->getAttribute('type');
 
-                // strip off namespace if present
-                if ($localType = strrchr($type, ':')) {
-                    $type = substr($localType, 1);
-                }
-                // $this->debugLog("Type: $type\n");
-
-                if ( $this->_isSimpleType($type) ) {
+                if ( $this->schemaHelper->isSimpleType($type) ) {
                     $type = 'simpleType';
                     $this->$name = '';
                 }
@@ -157,13 +143,8 @@ class XmlDataSequence {
             $element = $this->node;
             $name = $element->getAttribute('name');
             $type = $element->getAttribute('type');
-            // strip off namespace if present
-            if ($localType = strrchr($type, ':')) {
-                $type = substr($localType, 1);
-            }
-            // $this->debugLog("Type: $type\n");
 
-            if ( $this->_isSimpleType($type) ) {
+            if ( $this->schemaHelper->isSimpleType($type) ) {
                 $type = 'simpleType';
                 $this->$name = null;
             }
@@ -172,19 +153,5 @@ class XmlDataSequence {
                 'type' => $type
             ];
         }
-    }
-
-    protected function _isSimpleType($type) {
-        // $xPath->registerNamespace('', 'http://www.w3.org/2001/XMLSchema-datatypes');
-        // $xPath->registerNamespace('', 'http://www.w3.org/2001/XMLSchema');
-        $xQuery = "//child::*[local-name() = 'schema']/*[local-name() = 'simpleType' and @name = '$type']";
-        $found = $this->dtXpath->query($xQuery);
-        if ($found->length === 0) {
-            return false;
-        }
-        else {
-            return true;
-        }
-
     }
 }

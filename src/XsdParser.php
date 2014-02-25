@@ -22,7 +22,9 @@ class XsdParser {
     protected $xPath;
     protected $rootName;
     protected $nodeTree;
-    public $dataElements; // keep fetched elements cached
+    public    $dataElements; // keep fetched elements cached
+    protected $elementMap;
+    protected $schemaHelper;
     protected $_choices; // keep track of choices so only one is included
 
     public function __construct($xsd = '', $rootElement = '') {
@@ -40,6 +42,7 @@ class XsdParser {
         $this->nodeTree = new XmlNodeTree();
         $this->dataElements = array();
         $this->_choices = array();
+        $this->schemaHelper = new XsdSchemaHelper();
         if (!empty($rootElement)) {
             $this->setRootElement($rootElement);
             // $this->getRootDataObject();
@@ -227,6 +230,7 @@ class XsdParser {
         return $node;
     }
 
+
     /**
      * @param string $name
      * @return DOMNode|null
@@ -245,7 +249,7 @@ class XsdParser {
         return $node;
     }
 
-    /**
+     /**
      * @param string $name
      * @return DOMNode|null
      */
@@ -260,6 +264,19 @@ class XsdParser {
             $node = $nodeList->item(0);
         }
         return $node;
+    }
+
+    protected function _getComplexTypeFromName($name) {
+        $xPathQuery = "//*[@name='{$this->rootName}' and local-name() = 'element']//*[local-name() = 'sequence']/*[@name='$name']";
+        $nodeList = $this->xPath->query($xPathQuery);
+        if ($nodeList->length) {
+            $node = $nodeList->item(0);
+            $type = $node->getAttribute('type');
+            //TODO: need _isSimpleType() - see XmlDataSequence::
+        }
+        else {
+            return null;
+        }
     }
 
     protected function _parseNode($nodeParentName = '', $element = []) {
