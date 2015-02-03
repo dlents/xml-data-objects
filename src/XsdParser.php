@@ -22,7 +22,7 @@ class XsdParser {
     protected $xPath;
     protected $rootName;
     protected $nodeTree;
-    public    $dataElements; // keep fetched elements cached
+    public $dataElements; // keep fetched elements cached
     protected $elementMap;
     protected $schemaHelper;
     protected $_choices; // keep track of choices so only one is included
@@ -33,15 +33,15 @@ class XsdParser {
             trigger_error(__METHOD__ . " argument '$xsd' not found or can't be read");
         }
         // Set up DOM document and xpath objects
-        $this->xmlDOM = new DOMDocument();
+        $this->xmlDOM                     = new DOMDocument();
         $this->xmlDOM->preserveWhiteSpace = false;
-        $this->xmlDOM->formatOutput = true;
+        $this->xmlDOM->formatOutput       = true;
         $this->xmlDOM->load($xsd);
-        $this->xsd = $xsd;
-        $this->xPath = new DOMXPath($this->xmlDOM);
-        $this->nodeTree = new XmlNodeTree();
+        $this->xsd          = $xsd;
+        $this->xPath        = new DOMXPath($this->xmlDOM);
+        $this->nodeTree     = new XmlNodeTree();
         $this->dataElements = array();
-        $this->_choices = array();
+        $this->_choices     = array();
         $this->schemaHelper = new XsdSchemaHelper();
         if (!empty($rootElement)) {
             $this->setRootElement($rootElement);
@@ -52,7 +52,7 @@ class XsdParser {
     public function __destruct() {
         $this->debugLog("\n\ndataElements:\n" . var_export(array_keys($this->dataElements), true));
         // debug_print_backtrace();
-        foreach($this->_choices as $choice) {
+        foreach ($this->_choices as $choice) {
             foreach ($choice as $choiceName) {
                 //$this->debugLog("Choice '$choiceName'\n" . var_export($this->dataElements[$choiceName]));
             }
@@ -60,6 +60,7 @@ class XsdParser {
         }
 
     }
+
     public function getNodeTree() {
         return $this->nodeTree;
     }
@@ -75,6 +76,7 @@ class XsdParser {
             $this->rootName = 'AccessLicenseAgreementRequest';
         }
     }
+
     public function getRootName() {
         return $this->rootName;
     }
@@ -84,7 +86,7 @@ class XsdParser {
      * @return xmlDataSequence
      */
     public function getRootDataObject() {
-        return $this->getDataObject( $this->rootName );
+        return $this->getDataObject($this->rootName);
     }
 
     /**
@@ -108,7 +110,6 @@ class XsdParser {
             //$this->debugLog(" -- Found '$elementName' in existing object");
             return $this->dataElements[$element];
         }
-
         elseif (!empty($this->dataElements)) {
             //$this->debugLog("-- Searching existing elements for '$element'");
             foreach ($this->dataElements as $seqName => $seqObject) {
@@ -133,14 +134,14 @@ class XsdParser {
                     $dataNode = $elementNode;
                     break;
                 case 'unknownType':
-                    trigger_error("Unknown element type for '$element'");
-                    exit('WTF!');
+                    // trigger_error("Unknown element type for '$element'");
+                    // exit('WTF!');
                 default:
                     $dataNode = $this->_getNode($dataType);
                     break;
             }
 
-            $dataObject = new XmlDataSequence($dataNode);
+            $dataObject                   = new XmlDataSequence($dataNode);
             $this->dataElements[$element] = $dataObject;
         }
         else {
@@ -165,11 +166,29 @@ class XsdParser {
             $nodeList = $this->xPath->query($xPathQuery);
             if ($nodeList->length) {
                 $node = $nodeList->item(0);
-                if ($node->hasAttribute('type')) {
-                    $type = $node->getAttribute('type');
-                    if ($this->schemaHelper->isSimpleType($type)) {
-                        $type = 'simpleType';
+
+                if ($node->hasAttributes()) {
+//                    foreach ($node->attributes as $name => $attrNode) {
+//                        print "NODE '$name': " . print_r($attrNode, true);
+//                    }
+                    $itemNo   = 0;
+                    $attrNode = $node->attributes->getNamedItem('type');
+                    if ($attrNode) {
+                        printf("NODE '%s (%s)': '%s'\n",
+                            $attrNode->nodeName,
+                            $attrNode->localName,
+                            $attrNode->nodeValue); // . print_r($attrNode, true);
+                        $type = $attrNode->nodeValue;
                     }
+                    else {
+                        $type = $name;
+                    }
+
+                }
+
+
+                if ($this->schemaHelper->isSimpleType($type)) {
+                    $type = 'simpleType';
                 }
             }
         }
@@ -260,9 +279,9 @@ class XsdParser {
         }
         // $this->debugLog(__METHOD__ . "() - searching for choice '$elementName'");
 
-        $node = null;
+        $node       = null;
         $xPathQuery = "//*[@name='$elementName' or @type='$elementName']/parent::*[local-name()='choice']/*";
-        $nodeList = $this->xPath->query($xPathQuery);
+        $nodeList   = $this->xPath->query($xPathQuery);
         if ($nodeList->length) {
             // $this->debugLog(__METHOD__ . "() - Found choice '$elementName'");
             $choices = [];
@@ -291,9 +310,9 @@ class XsdParser {
         if (empty($elementName)) {
             return null;
         }
-        $node = null;
+        $node       = null;
         $xPathQuery = "(/descendant::*[@name='$elementName']//*[local-name()='sequence'])[last()]";
-        $nodeList = $this->xPath->query($xPathQuery);
+        $nodeList   = $this->xPath->query($xPathQuery);
 
         if ($nodeList->length) {
             $node = $nodeList->item(0);
@@ -301,7 +320,7 @@ class XsdParser {
         return $node;
     }
 
-     /**
+    /**
      * @param string $name
      * @return DOMNode|null
      */
@@ -309,9 +328,9 @@ class XsdParser {
         if (empty($elementName)) {
             return null;
         }
-        $node = null;
+        $node       = null;
         $xPathQuery = "/descendant::*[@name='$elementName' and local-name()='element']";
-        $nodeList = $this->xPath->query($xPathQuery);
+        $nodeList   = $this->xPath->query($xPathQuery);
         if ($nodeList->length) {
             $node = $nodeList->item(0);
         }
@@ -350,8 +369,7 @@ class XsdParser {
                 $nodeTree->addNode($nodeName, $node);
                 $node->parentObj->xmlElement->appendChild($node->xmlElement);
             }
-        }
-        // TODO: check for sub-objects?
+        } // TODO: check for sub-objects?
         elseif (!$dataObj->isChosen()) {
             return;
         }
@@ -360,7 +378,7 @@ class XsdParser {
             // $this->debugLog(__METHOD__ . " - '$elementName' dataElements: " . print_r($this->dataElements[$elementName], true)); // DBG
             // $this->debugLog($element['type'] . ': ' . print_r($typeSequence->getElements(), true));
             if (is_object($dataObj)) {
-                $typeElements = $dataObj->getElements();
+                $typeElements     = $dataObj->getElements();
                 $node->xmlElement = $nodeTree->xmlDoc->createElement($nodeName);
                 $nodeTree->addNode($nodeName, $node);
                 foreach ($typeElements as $childElement) {
@@ -380,7 +398,7 @@ class XsdParser {
         $doc = new DOMDocument('1.1', 'UTF-8');
 
         // $nodeTree->treeName = $rootName; //TODO: not needed
-        $this->nodeTree->xmlDoc   = $doc;
+        $this->nodeTree->xmlDoc = $doc;
         // $nodeTree->xsdFile  = $this->xsd; // not neeeded?
 
         // add the top node based on the type of UPS request
@@ -392,7 +410,7 @@ class XsdParser {
         $rootNode->xmlElement->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
         $this->nodeTree->addNode($this->rootName, $rootNode); // TODO: nodes don't need to be double named
 
-        $root = $this->getRootDataObject(); // TODO: Fixme
+        $root         = $this->getRootDataObject(); // TODO: Fixme
         $rootSequence = $root->getElements();
         // $this->debugLog(__METHOD__ . " - '{$this->rootName}' dataElements: " . print_r(array_keys($this->dataElements), true)); // DBG
         // $this->debugLog("Root sequence ($this->rootName)" . ': ' . print_r($rootSequence, true));
@@ -401,13 +419,13 @@ class XsdParser {
         foreach ($rootSequence as $childElement) {
             // if ($childElement['name'] === 'Address' || $childElement['name'] === 'AddressType') continue; // TODO: remove and fix!!
             // $this->debugLog(__METHOD__ . "() - checking '{$childElement['name']}':\n" . var_export($childElement, true));
-            if ($this->_isChoice($childElement['name']) ) {
+            if ($this->_isChoice($childElement['name'])) {
                 // $dataKey = ($childElement['type'] === 'simpleType' ? $childElement['name'] : $childElement['type']);
                 //if (!$this->_hasDataObject($dataKey)) {
 //                    $this->debugLog(__METHOD__ . "() - Skipping choice element '{$childElement['name']}'\n"
 //                        . var_export(array_keys($this->dataElements), true));
                 //    continue;
-               // }
+                // }
             }
             $this->_parseNode($this->rootName, $childElement);
             if ($this->nodeTree->hasNode($childElement['name'])) {
@@ -425,7 +443,7 @@ class XsdParser {
     }
 
     protected function _validateDocument() {
-        $doc = $this->nodeTree->xmlDoc;
+        $doc          = $this->nodeTree->xmlDoc;
         $ret          = array();
         $ret['error'] = '';
 

@@ -1,12 +1,11 @@
 <?php
+
 /**
  * Created by David Lents <david@captina.net>
  * Date: 2014-02-01
  * Time: 6:09 PM
  * Created with PhpStorm
  */
-
-
 class XmlDataSequence {
 
     use Debugger;
@@ -22,16 +21,16 @@ class XmlDataSequence {
      * @param DOMElement|DOMNode $elementNode
      */
     public function __construct($elementNode) {
-        if(empty($elementNode)) {
+        if (empty($elementNode)) {
             trigger_error(__METHOD__);
         }
         $this->node = $elementNode;
 
-        $this->parentName = $elementNode->parentNode->getAttribute('name');
+        $this->parentName   = $elementNode->parentNode->getAttribute('name');
         $this->schemaHelper = new XsdSchemaHelper();
         $this->_elementData = array();
-        $this->_elements = array();
-        $this->chosen = false;
+        $this->_elements    = array();
+        $this->chosen       = false;
         $this->_parseSequence();
 
         $this->debugOn();
@@ -47,7 +46,7 @@ class XmlDataSequence {
         // if(array_key_exists($elementName, $this->_elementData)) {
         if (!empty($elementName) && $this->isDataElement($elementName)) {
             $this->_elementData[$elementName] = $value;
-            $this->chosen = true;
+            $this->chosen                     = true;
             // $this->debugLog(__METHOD__ . "() - '$elementName' = '{$this->_elementData[$elementName]}'" );
         }
         // $db_bt = debug_backtrace(false, 5);
@@ -56,7 +55,7 @@ class XmlDataSequence {
 
     public function __get($elementName) {
         // $this->debugLog(__METHOD__ . "  - Get value of '$elementName' (" . print_r($this->_elementData, true) . ')');
-        if(array_key_exists($elementName, $this->_elementData)) {
+        if (array_key_exists($elementName, $this->_elementData)) {
             //$this->debugLog(__METHOD__ . "() - '$elementName' = '{$this->_elementData[$elementName]}'" );
             return $this->_elementData[$elementName];
         }
@@ -93,6 +92,7 @@ class XmlDataSequence {
     public function getData() {
         return $this->_elementData;
     }
+
     /**
      * @param DOMNodeList|DOMElement $elementNode
      *
@@ -116,28 +116,47 @@ class XmlDataSequence {
             //  + OR, perhaps best to simply rely on the data we have to determine what to include
 
             foreach ($sequenceIterator->getRecursiveIterator() as $element) {
-                // $element may be DOMNodeList or DOMElement, our iterator handle either case
+                // $element may be DOMNodeList, DOMElement, our iterator handle either case
+                // but it can also be DOMComment, in which case we skip
+                if (!method_exists($element, 'hasAttribute')) {
+                    continue;
+                }
+
+                // 2015-01-22, first encounter with this kind of element in UPS LocatorRequest.xsd main sequence:
+                //    <xsd:element ref="Request"/>
+                // so...
+                $type = 'UnknownType';
+                if ($element->hasAttribute('name')) {
+                    $name = $element->getAttribute('name');
+                }
+                elseif ($element->hasAttribute('ref')) {
+                    $name = $element->getAttribute('ref');
+                    $type = $name;
+                }
+                else {
+                    error_log('Skipping element with no name or ref attribute');
+                    continue;
+                }
+
+                if ($element->hasAttribute('type')) {
+                    $type = $element->getAttribute('type');
+                }
+
                 if ($element->localName === 'choice') {
                     // Choice of elements, meaning you can pick which one to use
                     // for now we're manually choosing, via $ups->rejectedChoiceElements below
                     continue;
                 }
-                $name = $element->getAttribute('name');
 
                 // minOccurs="0" essentially means this element is optional
                 // They break their own xsd with at least one element, see $requiredOptionalElements above
-                if ($element->hasAttribute('minOccurs')
-                    and $element->getAttribute('minOccurs') == '0'
-                    // and !in_array($name, $ups->requiredOptionalElements)
-                ) {
+                if ($element->hasAttribute('minOccurs') && $element->getAttribute('minOccurs') === '0') {
                     // continue;
                     // TODO: flag this
                 }
 
-                $type = $element->getAttribute('type');
-
-                if ( $this->schemaHelper->isSimpleType($type) ) {
-                    $type = 'simpleType';
+                if ($this->schemaHelper->isSimpleType($type)) {
+                    $type        = 'simpleType';
                     $this->$name = '';
                 }
                 $this->_elements[$name] = [
@@ -148,11 +167,25 @@ class XmlDataSequence {
         }
         else {
             $element = $this->node;
-            $name = $element->getAttribute('name');
-            $type = $element->getAttribute('type');
+            $type    = 'UnknownType';
+            if ($element->hasAttribute('name')) {
+                $name = $element->getAttribute('name');
+            }
+            elseif ($element->hasAttribute('ref')) {
+                $name = $element->getAttribute('ref');
+                $type = $name;
+            }
+            else {
+                error_log('Skipping element with no name or ref attribute');
+                return;
+            }
 
-            if ( $this->schemaHelper->isSimpleType($type) ) {
-                $type = 'simpleType';
+            if ($element->hasAttribute('type')) {
+                $type = $element->getAttribute('type');
+            }
+
+            if ($this->schemaHelper->isSimpleType($type)) {
+                $type        = 'simpleType';
                 $this->$name = null;
             }
             $this->_elements[$name] = [
