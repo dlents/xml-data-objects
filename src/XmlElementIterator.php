@@ -11,22 +11,28 @@
  * RecursiveIterator. This class provides a RecursiveIterator for looping over DOMNodeList
  * From comments at http://www.php.net/manual/en/class.domnodelist.php
  */
-
-
 class XmlElementIterator extends ArrayIterator implements RecursiveIterator {
     // Works on DOMNodeList or DOMElement
-    public function __construct ($element) {
-        $nodes = array();
+    public function __construct($element) {
+        $nodes       = array();
         $elementType = get_class($element);
         switch ($elementType) {
+            // 2015-01-22 - added code to skip nodes that are DOMComment
             case 'DOMNodeList':
-                foreach($element as $node) {
+                foreach ($element as $node) {
+                    if (get_class($node) == 'DOMComment') {
+                        continue;
+                    }
                     $nodes[] = $node;
                 }
                 break;
             case 'DOMElement':
                 if ($element->hasChildNodes()) {
-                    foreach($element->childNodes as $node) {
+                    foreach ($element->childNodes as $node) {
+                        if (get_class($node) == 'DOMComment') {
+                            // error_log("Comment in DOMElement: " . var_export($node, true));
+                            continue;
+                        }
                         $nodes[] = $node;
                     }
                 }
