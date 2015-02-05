@@ -40,8 +40,8 @@ class XsdParser {
         $this->xsd          = $xsd;
         $this->xPath        = new DOMXPath($this->xmlDOM);
         $this->nodeTree     = new XmlNodeTree();
-        $this->dataElements = array();
-        $this->_choices     = array();
+        $this->dataElements = [];
+        $this->_choices     = [];
         $this->schemaHelper = new XsdSchemaHelper();
         if (!empty($rootElement)) {
             $this->setRootElement($rootElement);
@@ -87,6 +87,65 @@ class XsdParser {
      */
     public function getRootDataObject() {
         return $this->getDataObject($this->rootName);
+    }
+
+
+    /**
+     * @param string
+     * @return null|XmlDataSequence
+     */
+    public function createDataObject($element) {
+        if (empty($element)) {
+            return null;
+        }
+
+        //TODO: redoing to get data elements vs. sequences/complexTypes correctly
+
+        $this->debugOn();
+        $dataObject = null;
+        $elementNode = $this->_getNode($element);
+        $this->debugLog(" -- got node :\n" . var_export($elementNode, true));
+        if ($elementNode) {
+            $dataType = $this->_getDataTypeFromName($element);
+            $dataNode = null;
+            switch ($dataType) {
+                case 'simpleType':
+                case 'rootElement':
+                    $dataNode = $elementNode;
+                    break;
+                case 'unknownType':
+                    // trigger_error("Unknown element type for '$element'");
+                    // exit('WTF!');
+                default:
+                    $dataNode = $this->_getNode($dataType);
+                    break;
+            }
+
+            $dataObject = new XmlDataSequence($dataNode);
+            // create or add to array if a node by this name already exists
+            if (is_array($this->dataElements[$element])) {
+                $this->dataElements[$element][] = $dataObject;
+            }
+            elseif ($this->_hasDataObject($element)) {
+                //$this->debugLog(" -- Found '$elementName' in existing object");
+                $origObject                   = $this->dataElements[$element];
+                $this->dataElements[$element] = [
+                    $origObject,
+                    $dataObject
+                ];
+            }
+            else {
+                $this->dataElements[$element] = $dataObject;
+            }
+        }
+        else {
+            $this->debugLog(__METHOD__ . ": Didn't process node '$element'");
+        }
+
+        // $this->debugLog("$element Data Elements: " . print_r(array_keys($this->dataElements), true)); // DBG
+        $this->debugOff();
+        // $this->debugLog(" -- dataObject now:\n" . var_export($dataObject, true));
+        return $dataObject;
     }
 
     /**
@@ -206,7 +265,7 @@ class XsdParser {
      *
      * @return bool
      */
-    protected function _isChoice($elementName = '') {
+    public function _isChoice($elementName = '') {
         if (empty($elementName) || empty($this->_choices)) {
             return false;
         }
@@ -270,7 +329,7 @@ class XsdParser {
     }
 
     /**
-     * @param string $name
+     * @param string $elementName
      * @return DOMNode|null
      */
     protected function _findChoiceByName($elementName) {
@@ -285,9 +344,13 @@ class XsdParser {
         if ($nodeList->length) {
             // $this->debugLog(__METHOD__ . "() - Found choice '$elementName'");
             $choices = [];
+            /**
+             * @var DOMNodeList|DOMNode[] $nodeList
+             * @var DOMNode $elem
+             */
             foreach ($nodeList as $elem) {
                 $elemName = $elem->getAttribute('name');
-                if ($elemName == $elementName) {
+                if ($elemName === $elementName) {
                     $node = $elem;
                 }
                 $choices[] = $elemName;
@@ -303,7 +366,7 @@ class XsdParser {
 
 
     /**
-     * @param string $name
+     * @param string $elementName
      * @return DOMNode|null
      */
     protected function _findSequenceByName($elementName) {
@@ -321,7 +384,7 @@ class XsdParser {
     }
 
     /**
-     * @param string $name
+     * @param string $elementName
      * @return DOMNode|null
      */
     protected function _findElementByName($elementName) {
@@ -428,7 +491,7 @@ class XsdParser {
                 // }
             }
             $this->_parseNode($this->rootName, $childElement);
-            if ($this->nodeTree->hasNode($childElement['name'])) {
+            if ($this->nodeTree->hasNode($childElement['name']) && $childElement['name']) {
                 $rootNode->xmlElement->appendChild($this->nodeTree->$childElement['name']->xmlElement);
             }
         }
