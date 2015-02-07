@@ -123,16 +123,17 @@ class XsdParser {
 
             $dataObject = new XmlDataSequence($dataNode);
             // create or add to array if a node by this name already exists
-            if (is_array($this->dataElements[$element])) {
-                $this->dataElements[$element][] = $dataObject;
-            }
-            elseif ($this->_hasDataObject($element)) {
+
+            if ($this->_hasDataObject($element)) {
                 //$this->debugLog(" -- Found '$elementName' in existing object");
                 $origObject                   = $this->dataElements[$element];
                 $this->dataElements[$element] = [
                     $origObject,
                     $dataObject
                 ];
+            }
+            elseif (array_key_exists($element, $this->dataElements) && is_array($this->dataElements[$element])) {
+                $this->dataElements[$element][] = $dataObject;
             }
             else {
                 $this->dataElements[$element] = $dataObject;
@@ -233,10 +234,11 @@ class XsdParser {
                     $itemNo   = 0;
                     $attrNode = $node->attributes->getNamedItem('type');
                     if ($attrNode) {
-                        printf("NODE '%s (%s)': '%s'\n",
-                            $attrNode->nodeName,
-                            $attrNode->localName,
-                            $attrNode->nodeValue); // . print_r($attrNode, true);
+                        // printf("NODE '%s (%s)': '%s'\n",
+                        //     $attrNode->nodeName,
+                        //     $attrNode->localName,
+                        //    $attrNode->nodeValue
+                        // ); // . print_r($attrNode, true);
                         $type = $attrNode->nodeValue;
                     }
                     else {
@@ -251,7 +253,7 @@ class XsdParser {
                 }
             }
         }
-        $this->debugLog(__METHOD__ . " - Found type '$type' from '$name'");
+        // $this->debugLog(__METHOD__ . " - Found type '$type' from '$name'");
         return $type;
     }
 
@@ -323,8 +325,8 @@ class XsdParser {
             $type = 'no';
         }
 
-        $this->debugLog("Found $type node for name '$elementName'");
         $this->debugOff();
+        $this->debugLog("Found $type node for name '$elementName'");
         return $node;
     }
 
@@ -404,6 +406,7 @@ class XsdParser {
         if (empty($element) || !array_key_exists('name', $element)) {
             return;
         }
+        $this->debugOff();
         //$this->debugLog(__METHOD__ . " :: Processing node '(parent: '$nodeParentName'}, element: " . var_export($element, true));
         $nodeTree = $this->nodeTree;
         // $this->debugLog(__METHOD__ . " ($nodeParentName): " . print_r($element, true));
