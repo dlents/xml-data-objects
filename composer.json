@@ -15,7 +15,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "git@bitbucket.org:dlents/xmldataobjects.git"
+            "url": "git@github.com:dlents/xml-data-objects.git"
         }
     ],
 
