@@ -36,13 +36,13 @@ class XmlDataObject {
 
     public function __set($name, $value = null) {
         if ($this->hasOwnProperty($name)) {
-            error_log( "XDO __set '$name' => '$value'" );
             $this->$name = $value;
         }
         else {
-            error_log( "XDO __set DATA '$name' => '$value'" );
             if (is_array($value)) {
+                // error_log('Value is array: ' . print_r($value, true));
                 $value = new ArrayObject($value);
+                // error_log( 'Value converted from array: ' . print_r( $value, true ) );
             }
             $this->_data->$name = $value;
         }

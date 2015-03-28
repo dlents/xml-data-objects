@@ -17,11 +17,13 @@ class XmlSchemaObject {
     /**
      * @var DOMDocument $xmlDoc
      */
+    protected $xsd;
     public $xmlDoc;
     protected $xsDoc;
     protected $xPath;
 
     public function __construct( $xsd ) {
+        $this->xsd = $xsd;
         $this->xsDoc = new DOMDocument();
         $this->xsDoc->load( $xsd );
         $this->xsDoc->preserveWhiteSpace = true;
@@ -52,7 +54,8 @@ class XmlSchemaObject {
         $rootNode->setAttributeNS( 'http://www.w3.org/2000/xmlns/', 'xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance' );
         $this->xmlDoc->appendChild( $rootNode );
         $this->walkElements( $this->dataTree, $rootNode );
-        return $this->XmlDoc;
+        $this->_validateDocument();
+        return $this->xmlDoc;
     }
 
     /**
@@ -92,6 +95,56 @@ class XmlSchemaObject {
             }
             $iter->next();
         }
+    }
+
+    protected function _validateDocument() {
+        $ret = [ ];
+        $ret['error'] = '';
+
+        libxml_use_internal_errors( true ); // supress error output for manual capture
+
+        // Validate our XML against the UPS xsd
+        $isValid = $this->xmlDoc->schemaValidate( $this->xsd );
+
+        if ( !$isValid ) {
+            $ret['result'] = 'FAIL';
+            $ret['error'] = $this->_processValidationErrors();
+
+        } else {
+            $ret['result'] = 'OK';
+        }
+        return $ret;
+    }
+
+    protected function _processValidationErrors() {
+        $errors = libxml_get_errors();
+        $msgs = [ ];
+        foreach ( $errors as $error ) {
+            $msgs[] = $this->_formatLibXmlErrors( $error );
+        }
+        libxml_clear_errors();
+        return $msgs; // TODO: maybe store these in object?
+    }
+
+    protected function _formatLibXmlErrors( $error ) {
+        $return = '';
+        switch ( $error->level ) {
+            case LIBXML_ERR_WARNING:
+                $return .= "Warning {$error->code}: ";
+                break;
+            case LIBXML_ERR_ERROR:
+                $return .= "Error {$error->code}: ";
+                break;
+            case LIBXML_ERR_FATAL:
+                $return .= "Fatal Error {$error->code}: ";
+                break;
+        }
+        $return .= trim( $error->message );
+        if ( $error->file ) {
+            $return .= " in file '{$error->file}'";
+        }
+        $return .= " on line {$error->line}\n";
+        return $return;
     }
 
 }
