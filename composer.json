@@ -1,25 +1,27 @@
 {
-  "name": "dlents/xml-data-objects",
-  "description": "Parses and XSD file and provides data objects and methods from Xsd schema to easily populate and create a valid XML result",
-  "minimum-stability": "stable",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "David Lents",
-      "email": "david@lents.net"
+    "name":              "dlents/xml-data-objects",
+    "description":       "Parses and XSD file and provides data objects and methods from Xsd schema to easily populate and create a valid XML result",
+    "minimum-stability": "stable",
+    "license":           "MIT",
+    "authors":           [
+        {
+            "name":  "David Lents",
+            "email": "david@lents.net"
+        }
+    ],
+    "autoload":          {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "repositories":      [
+        {
+            "type": "vcs",
+            "url":  "git@github.com:dlents/xml-data-objects.git"
+        }
+    ],
+    "require":           {
+        "php":               ">=5.4",
+        "guzzlehttp/guzzle": "^7"
     }
-  ],
-  "autoload": {
-    "classmap": ["src/"]
-  },
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "git@github.com:dlents/xml-data-objects.git"
-    }
-  ],
-  "require": {
-    "php": ">=5.4",
-    "guzzlehttp/guzzle": "~6.0"
-  }
 }
